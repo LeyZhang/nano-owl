@@ -1,0 +1,24 @@
+version: '3'
+services:
+  dev:
+    build:
+      context: .
+      args:
+        - USERNAME=yang
+        - USER_UID=1024
+        - USER_GID=1024
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ipc: host
+    network_mode: host
+    volumes:
+      - /home/yang/workspace/nano_vit:/home/yang/workspace/nano_vit
+      - /home/yang/data:/home/yang/data
+    # ports:
+    #   - 7861:7860 # port forward for gradio
+    command: /bin/sh -c "while sleep 1000; do :; done"
