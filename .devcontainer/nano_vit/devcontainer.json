@@ -1,8 +1,8 @@
-{
+ch{
   "name": "nano_vit",
   "dockerComposeFile": ["./docker-compose.yml"],
   "service": "dev",
-  "workspaceFolder": "/home/yang/workspace/nano_vit",
+  "workspaceFolder": "/home/yang/workspace/nano_vit/nonoowl",
   "extensions": ["ms-python.python","ms-toolsai.jupyter","ms-python.vscode-pylance","christian-kohler.path-intellisense"],
   "shutdownAction": "none",
   "updateRemoteUserUID": false, // manually set uid in docker-compose.yml
