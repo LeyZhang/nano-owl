@@ -1,5 +1,5 @@
 ch{
-  "name": "nano_vit",
+  "name": "nanoowl",
   "dockerComposeFile": ["./docker-compose.yml"],
   "service": "dev",
   "workspaceFolder": "/home/yang/workspace/nano_vit/nonoowl",
