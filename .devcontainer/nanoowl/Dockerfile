@@ -18,45 +18,25 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && apt-get autoremove -y \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/* \
-    && ln -sf /usr/bin/pip3 /usr/bin/pip
+    && ln -sf /usr/bin/pip3 /usr/bin/pip \
+    && pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
+USER $USERNAME
 
-# RUN chown -R $USERNAME:$USERNAME $HOME
-RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple \
-    && pip install --upgrade pip \
-    && pip install --upgrade ipykernel ipywidgets
-
+RUN pip install --upgrade pip \
+    && pip install --upgrade ipykernel ipywidgets matplotlib transformers \
+    && pip install tensorrt==8.5.2.2 \
+    && pip install git+https://github.com/openai/CLIP.git \
+    && pip install git+https://github.com/NVIDIA-AI-IOT/torch2trt.git
 
 ARG NANOOWL_REPO=LeyZhang/nano-owl
 ARG NANOOWL_BRANCH=main
 
-
-RUN git clone https://github.com/openai/CLIP.git /tmp/clip
-WORKDIR /tmp/clip
-RUN pip install .
-WORKDIR /
-RUN rm -rf /tmp/clip
-
-RUN pip install tensorrt==8.5.2.2
-RUN pip install git+https://github.com/NVIDIA-AI-IOT/torch2trt.git
-# RUN git clone https://github.com/NVIDIA-AI-IOT/torch2trt.git /tmp/torch2trt
-
-ok# WORKDIR /tmp/torch2trt
-# RUN pip install .
-# WORKDIR /
-# RUN rm -rf /tmp/torch2trt
-
-RUN pip install matplotlib && \
-    pip install transformers
+WORKDIR /tmp/
 
 RUN git clone --branch=${NANOOWL_BRANCH} https://github.com/${NANOOWL_REPO} nanoowl && \
     cd nanoowl && \
     git checkout main && \
     python3 setup.py develop --user
 
-
-
-
-
-
-
+WORKDIR $HOME

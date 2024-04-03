@@ -17,7 +17,7 @@ services:
     ipc: host
     network_mode: host
     volumes:
-      - /home/yang/workspace/nano_vit:/home/yang/workspace/nano_vit
+      - /home/yang/workspace/nanoowl:/home/yang/nanoowl
       - /home/yang/data:/home/yang/data
     # ports:
     #   - 7861:7860 # port forward for gradio
