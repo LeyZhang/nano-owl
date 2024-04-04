@@ -15,10 +15,11 @@ services:
               count: all
               capabilities: [gpu]
     ipc: host
-    network_mode: host
+    network_mode: bridge
     volumes:
       - /home/yang/workspace/nanoowl:/home/yang/nanoowl
+      - /home/yang/.cache/huggingface:/home/yang/.cache/huggingface
       - /home/yang/data:/home/yang/data
-    # ports:
-    #   - 7861:7860 # port forward for gradio
+    ports:
+      - 7878:7860 # port forward for gradio
     command: /bin/sh -c "while sleep 1000; do :; done"

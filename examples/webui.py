@@ -1,4 +1,6 @@
+import numpy as np
 import gradio as gr
+from collections import defaultdict
 
 from nanoowl.owl_predictor import (
     OwlPredictor
@@ -19,7 +21,7 @@ engine_paths = {
 }
 
 
-def detect_objects(image, prompt, threshold, nms_threshold, model, no_roi_align):
+def detect_objects(image, prompt, threshold, filter_ratio, nms_threshold, model, no_roi_align):
     global current_model, predictor
 
     prompt = prompt.strip("][()")
@@ -54,22 +56,44 @@ def detect_objects(image, prompt, threshold, nms_threshold, model, no_roi_align)
         pad_square=False
     )
 
+    labels = output.labels.cpu().numpy()
+    scores = output.scores.detach().cpu().numpy()
+    boxes = output.boxes.detach().cpu().numpy()
+
+    label_scores = defaultdict(list)
+    for label, score in zip(labels, scores):
+        label_scores[label].append(score)
+
+    max_scores = {label: max(scores) for label, scores in label_scores.items()}
+
+    to_remove = []
+    for index, (label, score) in enumerate(zip(labels, scores)):
+        if score < filter_ratio * max_scores[label]:
+            to_remove.append(index)
+
+    output.scores = [score for index, score in enumerate(scores) if index not in to_remove]
+    output.labels = [label for index, label in enumerate(labels) if index not in to_remove]
+    output.boxes = [box for index, box in enumerate(boxes) if index not in to_remove]
+
     result = draw_owl_output(image, output, text=text, draw_text=True)
 
-    return result
+    return result, '\n'.join(map(lambda x: str(x).strip('()').replace('array(', '').replace(', dtype=float32', ''), zip(output.labels, list(output.scores), list(output.boxes))))
 
 
-# Interface
 inputs = [
     gr.Image(type="pil", label="Input Image"),
     gr.Textbox(label="Text Prompt", value="a photo of fire or smoke"),
-    gr.Textbox(label="Threshold", value="0.1"),
-    gr.Number(label="NMS Threshold", value="0.3"),
+    gr.Textbox(label="Threshold", value="0.05"),
+    gr.Slider(label="Filter Ratio", maximum=1.0, step=0.05, value=0.8),
+    gr.Slider(label="NMS Threshold", maximum=1.0, step=0.05, value=0.3),
     gr.Dropdown(list(engine_paths.keys()), label="Model Choice"),
     gr.Checkbox(label="No ROI Align"),
 ]
 
-outputs = gr.Image(type="pil", label="Output Image")
+outputs = [
+    gr.Image(type="pil", label="Output Image"),
+    gr.Textbox(lines=10, label="Output")
+]
 
 gr.Interface(
     fn=detect_objects,

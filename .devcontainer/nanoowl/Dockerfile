@@ -24,7 +24,7 @@ RUN groupadd --gid $USER_GID $USERNAME \
 USER $USERNAME
 
 RUN pip install --upgrade pip \
-    && pip install --upgrade ipykernel ipywidgets matplotlib transformers \
+    && pip install --upgrade ipykernel ipywidgets gradio matplotlib transformers \
     && pip install tensorrt==8.5.2.2 \
     && pip install git+https://github.com/openai/CLIP.git \
     && pip install git+https://github.com/NVIDIA-AI-IOT/torch2trt.git
