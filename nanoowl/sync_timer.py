@@ -18,7 +18,7 @@ import time
 import torch
 
 
-__all__ == [
+__all__ = [
     "SyncTimer"
 ]
 

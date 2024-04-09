@@ -211,7 +211,15 @@ live-edited text prompts.  To run the example
     - Example: [a face (interested, yawning / bored)]
     - Example: (indoors, outdoors)
 
+### Example 4 - Fewshot prediction
 
+This example replicates the Image-Conditioned Detection example in the original OwlVit repo.  To run the example
+
+```bash
+python3 fewshot_predict.py --threshold "0.7,0.1" --image_encoder_engine ../data/owl_image_encoder_large_patch14.engine --query-image ../assets/person.jpg ../assets/person_query.jpeg --query-label "a person" "a person" --image ../assets/person.jpg --model "google/owlvit-large-patch14"
+```
+
+By default the output will be saved to ``data/fewshot_predict_out.jpg``.
 
 <a id="acknowledgement"></a>
 ## 👏 Acknowledgement

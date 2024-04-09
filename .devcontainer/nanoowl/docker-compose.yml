@@ -15,7 +15,6 @@ services:
               count: all
               capabilities: [gpu]
     ipc: host
-    network_mode: bridge
     volumes:
       - /home/yang/workspace/nanoowl:/home/yang/nanoowl
       - /home/yang/.cache/huggingface:/home/yang/.cache/huggingface
