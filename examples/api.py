@@ -1,6 +1,6 @@
 import numpy as np
-import gradio as gr
 from collections import defaultdict
+from PIL import Image
 
 from nanoowl.owl_predictor import (
     OwlPredictor
@@ -20,7 +20,7 @@ engine_paths = {
 }
 
 
-def load_model(model):
+def load_model(model, engine_path):
     global current_model, predictor
     
     if model != current_model:
@@ -28,8 +28,10 @@ def load_model(model):
 
     predictor = OwlPredictor(
         current_model,
-        image_encoder_engine=engine_paths[current_model],
+        image_encoder_engine=engine_path,
     )
+
+
 
 
 def inter_ratio(box1, box2):
@@ -143,43 +145,53 @@ def detect(image, pos_prompt, neg_prompt, threshold, nms_threshold, conf_ratio, 
 
     output.labels, output.scores, output.boxes = filter_by_conf(labels, scores, boxes, conf_ratio, min_box_size)
 
-    result = draw_owl_output(image, output, text=text, draw_text=True)
+    result = output
 
     neg_labels = list(range(len(pos_text), len(text)))
     output.labels, output.scores, output.boxes = filter_by_neg(output.labels, output.scores, output.boxes, inter_ratio_threshold, neg_labels)
 
-    result_filtered = draw_owl_output(image, output, text=text, draw_text=True)
+    result_filtered = output
     
     return result, result_filtered, log
 
 
-if __name__ == "__main__":
-    with gr.Blocks() as demo:
-        gr.Markdown("## 新大陆物体检测方案")
-        with gr.Row():
-            with gr.Column(scale=4):
-                gr.Markdown("### 输入图像")
-                input_img = gr.Image(type="pil", label="Input Image")
-                gr.Markdown("### 模型参数")
-                model_choice = gr.Dropdown(list(engine_paths.keys()), label="检测模型")
-                pos_prompt = gr.Textbox(label="正向提示词", value="")
-                neg_prompt = gr.Textbox(label="反向提示词", value="")
-                threshold = gr.Textbox(label="检测阈值", value="0.05")
-                nms_threshold = gr.Slider(label="NMS阈值", maximum=1.0, step=0.05, value=0.3)
-                gr.Markdown("### 过滤参数")
-                conf_ratio = gr.Slider(label="置信度低于最大置信度乘以该参数的将被排除", maximum=1.0, step=0.05, value=0.8)
-                inter_ratio_threshold = gr.Slider(label="与反向提示词检测框的交集占比大于该参数的将被排除", maximum=1.0, step=0.05, value=0.5)
-                min_box_size = gr.Slider(label="最小检测框大小", maximum=20., step=1, value=10.)
-                run_btn = gr.Button("检测")
-            with gr.Column(scale=4):
-                gr.Markdown("### 运行结果")
-                output_image = gr.Image(type="pil", label="检测结果")
-                output_image_filtered = gr.Image(type="pil", label="检测结果 (过滤后)")
-                log = gr.Textbox(lines=10, label="运行输出")
 
-        model_choice.change(load_model, inputs=model_choice)
-        run_btn.click(fn=detect,
-                      inputs=[input_img, pos_prompt, neg_prompt, threshold, nms_threshold, conf_ratio, inter_ratio_threshold, min_box_size],
-                      outputs=[output_image, output_image_filtered, log])
-        
-    demo.launch(server_name="0.0.0.0")
+prompt_dict = {
+    "person" : {
+        "pos_prompt": "a photo of person",
+        "neg_prompt": "a photo of advertisement"
+    },
+    "fire" : {
+        "pos_prompt": "a photo of fire and smoke",
+        "neg_prompt": ""
+    },
+}
+
+def detect_api(image_path, prompt):
+    input_image = Image.open(image_path)
+    pos_prompt = prompt_dict[prompt]["pos_prompt"]
+    neg_prompt = prompt_dict[prompt]["neg_prompt"]
+    result, result_filtered, log = detect(input_image, pos_prompt, neg_prompt, threshold="0.05", nms_threshold=0.3, conf_ratio=0.75, inter_ratio_threshold=0.5, min_box_size=20)
+    return result_filtered.labels, result_filtered.scores, result_filtered.boxes
+
+import yaml
+
+if __name__ == "__main__":
+    # 读取配置文件
+    with open("config/config.yml", "r") as file:
+        config = yaml.safe_load(file)
+    
+    input_image_path = config["input_image_path"]
+    model = config["model"]
+    engine_path = config["engine_path"]
+    prompt = config["prompt"]
+    
+    # 加载模型
+    load_model(model, engine_path)
+    
+    # 执行检测并打印结果
+    labels, scores, boxes = detect_api(input_image_path, prompt)
+    print(f"result_filtered.labels: {labels}, result_filtered.scores: {scores}, result_filtered.boxes: {boxes}")
+    
+
+

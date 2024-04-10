@@ -1,0 +1,4 @@
+input_image_path: "../assets/person.jpg"                        # Path to the input image
+model: "google/owlvit-base-patch32"                             # Model name
+engine_path: "../data/owl_image_encoder_base_patch32.engine"    # Path to the engine file
+prompt: "person"                                                # Prompt for the model, can be one of these: "person, fire"
