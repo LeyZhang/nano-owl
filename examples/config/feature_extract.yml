@@ -1,0 +1,9 @@
+input_folder: "../../data/data/Person/data/train"                         # Path to the image folder
+output_folder: "./result"                                                 # Path to the output folder
+ground_truth_label_file: "../../data/data/Person/data/train/labels.txt"   # Path to the ground truth label file
+model: "google/owlv2-large-patch14-ensemble"                              # Model name
+engine_path: "../data/owlv2_image_encoder_large_patch14.engine"           # Path to the engine file
+threshold: "0.03"                                                         # Threshold for the owl model (Try not to change this)
+nms_threshold: 0.3                                                        # Non-maximum suppression threshold
+iou_threshold: 0.7                                                        # Intersection over union threshold
+prompt: "person"                                                          # Prompt for the model, this model is designed specifically for person detection

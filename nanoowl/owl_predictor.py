@@ -351,19 +351,21 @@ class OwlPredictor(torch.nn.Module):
 
         input_indices = torch.arange(0, num_input_images, dtype=labels.dtype, device=labels.device)
         input_indices = input_indices[:, None].repeat(1, self.num_patches)
+        # from IPython import embed; embed()
         
         labels = labels[mask]
         scores = scores[mask]
         boxes = image_output.pred_boxes[mask]
         input_indices = input_indices[mask]
+        select_indices = torch.where(mask)[1]
 
         # apply non-maximum suppression
         if nms_threshold < 1.0:
-            filtered_labels, filtered_scores, filtered_boxes, filtered_input_indices = [], [], [], []
+            filtered_labels, filtered_scores, filtered_boxes, filtered_input_indices, filtered_select_indices = [], [], [], [], []
             for idx in range(num_input_images):  # batch
                 this_mask = input_indices == idx
-                this_labels, this_scores, this_boxes, this_inpu_indices = (
-                    labels[this_mask], scores[this_mask], boxes[this_mask], input_indices[this_mask]
+                this_labels, this_scores, this_boxes, this_inpu_indices, this_select_indices = (
+                    labels[this_mask], scores[this_mask], boxes[this_mask], input_indices[this_mask], select_indices[this_mask]
                 )
                 for i in torch.argsort(-this_scores):
                     if this_scores[i] < 0.001:
@@ -380,16 +382,20 @@ class OwlPredictor(torch.nn.Module):
                 filtered_scores.append(this_scores[this_nms_mask])
                 filtered_boxes.append(this_boxes[this_nms_mask])
                 filtered_input_indices.append(this_inpu_indices[this_nms_mask])
+                filtered_select_indices.append(this_select_indices[this_nms_mask])
             labels = torch.cat(filtered_labels, dim=0)
             scores = torch.cat(filtered_scores, dim=0)
             boxes = torch.cat(filtered_boxes, dim=0)
             input_indices = torch.cat(filtered_input_indices, dim=0)
+            select_indices = torch.cat(filtered_select_indices, dim=0)
+        
+        # from IPython import embed; embed()
 
         return OwlDecodeOutput(
             labels=labels,
             scores=scores,
             boxes=boxes,
-            input_indices=input_indices
+            input_indices=select_indices
         )
 
     @staticmethod
@@ -542,7 +548,7 @@ class OwlPredictor(torch.nn.Module):
             nms_threshold: int = 1.0,
             class_based_nms: bool = True,
             pad_square: bool = True,
-            
+            extract: bool = False
         ) -> OwlDecodeOutput:
 
         if isinstance(image, PIL.Image.Image):
@@ -582,6 +588,8 @@ class OwlPredictor(torch.nn.Module):
                         [1, 1, 4], dtype=pred_boxes.dtype, device=pred_boxes.device
                     ) * orig_to_resize_factor
             image_encodings.pred_boxes = pred_boxes
-
-        return self.decode(image_encodings, text_encodings, threshold, nms_threshold, class_based_nms)
+        if not extract:
+            return self.decode(image_encodings, text_encodings, threshold, nms_threshold, class_based_nms)
+        else:
+            return self.decode(image_encodings, text_encodings, threshold, nms_threshold, class_based_nms), image_encodings.image_class_embeds
 
