@@ -269,6 +269,7 @@ if __name__ == "__main__":
     
     # 读取配置文件中的参数
     input_folder = config["input_folder"]    
+    output_folder = config["output_folder"]
     ref_image_paths = config["ref_image_paths"]
     model = config["model"]
     engine_path = config["engine_path"]
@@ -315,7 +316,7 @@ if __name__ == "__main__":
         # print(f"result_filtered.labels: {labels}, result_filtered.scores: {scores}, result_filtered.boxes: {boxes}")
         print("=====================================")
     # save as npz
-    np.savez("result/pos_image_embeddings.npz", all_pos_embeddings)
-    np.savez("result/neg_image_embeddings.npz", all_neg_embeddings)
+    np.savez(os.path.join(output_folder, "pos_image_embeddings.npz"), all_pos_embeddings)
+    np.savez(os.path.join(output_folder, "neg_image_embeddings.npz"), all_neg_embeddings)
 
 
