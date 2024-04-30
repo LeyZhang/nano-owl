@@ -36,8 +36,8 @@ class MLP(nn.Module):
         return x
 
 
-clf = MLP(768, [256, 128, 64], 1)
-clf.load_state_dict(torch.load('model/mlp_warmup_best.pth'))
+clf = MLP(768, [1024, 2048, 1024, 512, 256, 128], 2)
+clf.load_state_dict(torch.load('model/mlp_total_data_cross_val_2_best.pth'))
 clf.eval()
 
 current_model = None
@@ -178,7 +178,8 @@ def detect(image, pos_prompt, neg_prompt, threshold, nms_threshold, conf_ratio, 
 
     select_embeds = embeds[:,indices,:].squeeze().detach().cpu().numpy()
     select_embeds /= (np.linalg.norm(select_embeds, axis=-1, keepdims=True) + 1e-6)
-    pred_labels = clf(torch.from_numpy(select_embeds).float()).detach().cpu().numpy().squeeze() > 0.5
+    pred_labels = clf(torch.from_numpy(select_embeds).float()).detach().cpu().numpy().squeeze()
+    pred_labels = np.argmax(pred_labels, axis=-1)
 
     output.labels = labels[pred_labels == 1]
     output.scores = scores[pred_labels == 1]

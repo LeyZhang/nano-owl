@@ -45,3 +45,20 @@ def load_model(model, engine_path)
 
 这个版本的api使用方法与上个版本并没有过多改变，只需要注意clf模型的正确加载，其他部分的接口是基本不变的。
 
+
+## 测试模型
+
+我们这次训练了两个模型，放在api.py中的clf中，但是两个模型的结构是不一样的，因此，需要你们按照如下的格式分别修改测试两个模型：
+
+```python
+# 第一个模型的结构和加载
+clf = MLP(768, [1024, 2048, 1024, 512, 256, 128], 2)
+clf.load_state_dict(torch.load('model/mlp_total_data_cross_val_2_best.pth'))
+
+# 第二个模型的结构和加载
+clf = MLP(768, [1024, 2048, 1024, 512, 128, 64], 2)
+clf.load_state_dict(torch.load('model/mlp_total_data_cross_val_best.pth'))
+```
+
+其他部分的代码不需要修改，仍旧按照上述的方式运行即可。
+
