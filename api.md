@@ -48,17 +48,25 @@ def load_model(model, engine_path)
 
 ## 测试模型
 
-我们这次训练了两个模型，放在api.py中的clf中，但是两个模型的结构是不一样的，因此，需要你们按照如下的格式分别修改测试两个模型：
+本次我们修改了owl的模型输出，把clf放在了owl_predict.py中，所以在api的md中不需要加载clf模型了。相对的，我们需要在owl_predict.py中加载clf模型，而且由于涉及到了源文件的修改，需要你们重新setup一下：
 
-```python
-# 第一个模型的结构和加载
-clf = MLP(768, [1024, 2048, 1024, 512, 256, 128], 2)
-clf.load_state_dict(torch.load('model/mlp_total_data_cross_val_2_best.pth'))
-
-# 第二个模型的结构和加载
-clf = MLP(768, [1024, 2048, 1024, 512, 128, 64], 2)
-clf.load_state_dict(torch.load('model/mlp_total_data_cross_val_best.pth'))
+```bash
+python3 setup.py develop --user
 ```
 
-其他部分的代码不需要修改，仍旧按照上述的方式运行即可。
+然后在owl_predict.py中加载clf模型，代码如下：
+
+```python
+
+clf = MLP(768, [1024, 2048, 1024, 512, 128, 64], 2)
+clf.load_state_dict(torch.load('model/mlp_new_total_data_best.pth'))
+```
+
+因为我们修改了owl模型的输出，所以设置文件中的阈值也需要重新设置，主要是这一段：
+
+```yaml
+threshold: "0.5"                                                         # Threshold for the owl model (Try not to change this)
+```
+
+阈值的设置最好在0.5左右，稍微升高会导致检测的物体更加准确，但是会导致漏检的情况增多，降低会导致检测的物体更多，但是会导致误检的情况增多，但是最好不要偏离0.5太远。
 

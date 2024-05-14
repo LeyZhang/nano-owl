@@ -5,7 +5,7 @@ model: "google/owlv2-large-patch14-ensemble"                             # Model
 engine_path: "../data/owlv2_image_encoder_large_patch14.engine"    # Path to the engine file
 prompt: "person"                                                # Prompt for the model, can be one of these: "person, fire"
 negative_prompt: "advertisement, truck side advertisement"                                # Negative prompt for the model
-threshold: "0.03"                                               # Threshold for the model
+threshold: "0.5"                                               # Threshold for the model
 nms_threshold: 0.3                                              # Non-maximum suppression threshold
 conf_ratio: 0                                                # Confidence ratio
 inter_ratio_threshold: 1                                      # Intersection ratio threshold

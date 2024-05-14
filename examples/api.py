@@ -36,9 +36,9 @@ class MLP(nn.Module):
         return x
 
 
-clf = MLP(768, [1024, 2048, 1024, 512, 256, 128], 2)
-clf.load_state_dict(torch.load('model/mlp_total_data_cross_val_2_best.pth'))
-clf.eval()
+# clf = MLP(768, [1024, 2048, 1024, 512, 256, 128], 2)
+# clf.load_state_dict(torch.load('model/mlp_new_total_data_best.pth'))
+# clf.eval()
 
 current_model = None
 predictor = None
@@ -137,7 +137,7 @@ def filter_by_neg(labels, scores, boxes, inter_ratio_threshold, neg_labels):
 
 def detect(image, pos_prompt, neg_prompt, threshold, nms_threshold, conf_ratio, inter_ratio_threshold, min_box_size):
     global predictor
-    global clf
+    # global clf
 
     text = []
 
@@ -176,14 +176,14 @@ def detect(image, pos_prompt, neg_prompt, threshold, nms_threshold, conf_ratio, 
 
     result = output
 
-    select_embeds = embeds[:,indices,:].squeeze().detach().cpu().numpy()
-    select_embeds /= (np.linalg.norm(select_embeds, axis=-1, keepdims=True) + 1e-6)
-    pred_labels = clf(torch.from_numpy(select_embeds).float()).detach().cpu().numpy().squeeze()
-    pred_labels = np.argmax(pred_labels, axis=-1)
+    # select_embeds = embeds[:,indices,:].squeeze().detach().cpu().numpy()
+    # select_embeds /= (np.linalg.norm(select_embeds, axis=-1, keepdims=True) + 1e-6)
+    # pred_labels = clf(torch.from_numpy(select_embeds).float()).detach().cpu().numpy().squeeze()
+    # pred_labels = np.argmax(pred_labels, axis=-1)
 
-    output.labels = labels[pred_labels == 1]
-    output.scores = scores[pred_labels == 1]
-    output.boxes = boxes[pred_labels == 1]
+    # output.labels = labels[pred_labels == 1]
+    # output.scores = scores[pred_labels == 1]
+    # output.boxes = boxes[pred_labels == 1]
 
 
 
