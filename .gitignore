@@ -2,4 +2,9 @@ data
 *.egg-info
 *.pyc
 charmap.json.gz
+examples/result
+bin
+labels
+dist
+build
 sandbox

@@ -37,6 +37,37 @@ __all__ = [
     "OwlDecodeOutput"
 ]
 
+from torch import nn
+
+class MLP(nn.Module):
+    def __init__(self, input_dim, hidden_dims, output_dim):
+        super().__init__()
+        self.input_dim = input_dim
+        self.hidden_dims = hidden_dims
+        self.output_dim = output_dim
+        self.fc0 = nn.Linear(input_dim, hidden_dims[0])
+        self.activate0 = nn.GELU()
+        for i in range(len(hidden_dims)-1):
+            setattr(self, f'fc{i+1}', nn.Linear(hidden_dims[i], hidden_dims[i+1]))
+            setattr(self, f'activate{i+1}', nn.GELU())
+        self.fcout = nn.Linear(hidden_dims[-1], output_dim)
+        self.final_activate = nn.Sigmoid()
+
+    def forward(self, x):
+        x = self.fc0(x)
+        x = self.activate0(x)
+        for i in range(len(self.hidden_dims)-1):
+            x = getattr(self, f'fc{i+1}')(x)
+            x = getattr(self, f'activate{i+1}')(x)
+        x = self.fcout(x)
+        x = self.final_activate(x)
+        return x
+
+
+clf = MLP(768, [1024, 2048, 1024, 512, 256, 128], 2)
+clf.load_state_dict(torch.load('model/mlp_new_total_data_best.pth'))
+clf.eval()
+
 
 def _owl_center_to_corners_format_torch(bboxes_center):
     center_x, center_y, width, height = bboxes_center.unbind(-1)
@@ -315,12 +346,13 @@ class OwlPredictor(torch.nn.Module):
 
     def decode(self, 
             image_output: OwlEncodeImageOutput, 
+            text:List[str],
             text_output: OwlEncodeTextOutput,
             threshold: Union[int, float, List[Union[int, float]]] = 0.1,
             nms_threshold: int = 1.0,
             class_based_nms: bool = True
         ) -> OwlDecodeOutput:
-
+        sensitive_text = ["person"]
         if isinstance(threshold, (int, float)):
             threshold = [threshold] * len(text_output.text_embeds) #apply single threshold to all labels 
 
@@ -338,10 +370,17 @@ class OwlPredictor(torch.nn.Module):
         labels = scores_max.indices
         scores = scores_max.values
 
+        global clf
         masks = []
         for i, thresh in enumerate(threshold):
             label_mask = labels == i
             score_mask = scores > thresh
+            if text[i] in sensitive_text:
+                label_scores = clf(image_class_embeds.squeeze().cpu())
+                label_scores = label_scores.to(self.device)
+                label_scores = label_scores[:, 1]
+                scores[:,labels.squeeze() == i] = label_scores[labels.squeeze() == i]
+                score_mask = scores > thresh
             obj_mask = torch.logical_and(label_mask,score_mask)
             masks.append(obj_mask) 
         
@@ -589,7 +628,7 @@ class OwlPredictor(torch.nn.Module):
                     ) * orig_to_resize_factor
             image_encodings.pred_boxes = pred_boxes
         if not extract:
-            return self.decode(image_encodings, text_encodings, threshold, nms_threshold, class_based_nms)
+            return self.decode(image_encodings, text, text_encodings, threshold, nms_threshold, class_based_nms)
         else:
-            return self.decode(image_encodings, text_encodings, threshold, nms_threshold, class_based_nms), image_encodings.image_class_embeds
+            return self.decode(image_encodings, text, text_encodings, threshold, nms_threshold, class_based_nms), image_encodings.image_class_embeds
 
