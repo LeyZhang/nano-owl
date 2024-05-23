@@ -205,7 +205,7 @@ def detect(image, pos_prompt, neg_prompt, threshold, nms_threshold, conf_ratio, 
 
 def detect_api(image_path, prompt, config):
     input_image = Image.open(image_path)
-    pos_prompt = config["pos_prompt"]
+    pos_prompt = config["prompt"]
     threshold = config["threshold"]
     nms_threshold = config["nms_threshold"]
     conf_ratio = config["conf_ratio"]

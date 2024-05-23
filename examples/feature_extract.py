@@ -181,7 +181,6 @@ def detect(image, pos_prompt, neg_prompt, threshold, nms_threshold, conf_ratio, 
 
         text.append(ref_prompt + f"_ref_{i}")
 
-
     output, embeds = predictor.predict(
         image=image, 
         text=text, 
@@ -224,28 +223,37 @@ def generate_embedding_data(ground_truth_lines, image_name, labels, scores, boxe
         return [], [select_embedding.tolist() for select_embedding in select_embeddings]
     pos_embeddings = []
     neg_embeddings = []
+    total_embeddings = []
+    total_ious = []
 
     for label, score, box, index, select_embedding in zip(labels, scores, boxes, indices, select_embeddings):
-        flag = False 
+        # flag = False 
+        max_iou = 0
+        box = box.tolist()
         for gtbox in gtboxes:
-            if iou(gtbox[:4], box) > iou_threshold:
-                # 暂时只提取对应的特征
-                pos_embeddings.append(select_embedding.tolist())
-                flag = True
-                break
-        if not flag:
-            neg_embeddings.append(select_embedding.tolist())
-    pos_embeddings = np.array(pos_embeddings)
-    neg_embeddings = np.array(neg_embeddings)
-    return pos_embeddings, neg_embeddings
-
+            max_iou = max(max_iou, iou(gtbox[:4], box))
+            # if iou(gtbox[:4], box) > iou_threshold:
+            #     # 暂时只提取对应的特征
+            #     pos_embeddings.append(select_embedding.tolist())
+            #     flag = True
+            #     break
+        # if not flag:
+        #     neg_embeddings.append(select_embedding.tolist())
+        total_embeddings.append(select_embedding.tolist())
+        total_ious.append(max_iou)
+    # pos_embeddings = np.array(pos_embeddings)
+    # neg_embeddings = np.array(neg_embeddings)
+    # from IPython import embed; embed()
+    total_embeddings = np.array(total_embeddings)
+    total_ious = np.array(total_ious)
+    return total_embeddings, total_ious
     
 
-def detect_vision_api(image_path, neg_prompt, threshold, nms_threshold, conf_ratio, inter_ratio_threshold, min_box_size, image_ref_paths:list, prompt_ref:list):
+def detect_vision_api(image_path, pos_prompt, neg_prompt, threshold, nms_threshold, conf_ratio, inter_ratio_threshold, min_box_size, image_ref_paths:list, prompt_ref:list):
     input_image = Image.open(image_path)
     ref_images = [Image.open(image_ref_path) for image_ref_path in image_ref_paths]
     
-    result, result_filtered, log, embeds = detect(input_image, None, None, threshold, nms_threshold, conf_ratio, inter_ratio_threshold, min_box_size, ref_images, prompt_ref)
+    result, result_filtered, log, embeds = detect(input_image, pos_prompt, None, threshold, nms_threshold, conf_ratio, inter_ratio_threshold, min_box_size, ref_images, prompt_ref)
     indices = result_filtered.input_indices
     selected_embeds = embeds[:, indices, :].squeeze(0).detach().cpu().numpy()
     return result_filtered.labels, result_filtered.scores, result_filtered.boxes, result_filtered.input_indices, selected_embeds
@@ -270,10 +278,10 @@ if __name__ == "__main__":
     # 读取配置文件中的参数
     input_folder = config["input_folder"]    
     output_folder = config["output_folder"]
-    ref_image_paths = config["ref_image_paths"]
+    ref_image_paths = []
     model = config["model"]
     engine_path = config["engine_path"]
-    prompt = [config["prompt"]]
+    prompt = config["prompt"]
     threshold   = config["threshold"]
     nms_threshold = config["nms_threshold"]
     iou_threshold = config["iou_threshold"]
@@ -295,6 +303,8 @@ if __name__ == "__main__":
 
     all_pos_embeddings = []
     all_neg_embeddings = []
+    all_embeddings = []
+    all_ious = []
 
 
     for image_name in tqdm(os.listdir(input_folder)):
@@ -302,21 +312,25 @@ if __name__ == "__main__":
         if image_name not in target_lines: # 如果不在标签文件中，跳过
             continue
         print(f"=== input image: {image_name} ===")
+        # labels, scores, boxes, indices, selected_embeds = detect_vision_api(input_image_path, prompt, neg_prompt, threshold, nms_threshold, conf_ratio, inter_ratio_threshold, min_box_size, ref_image_paths, [])
+
         # 执行检测并打印结果
-        try:
-            labels, scores, boxes, indices, selected_embeds = detect_vision_api(input_image_path, neg_prompt, threshold, nms_threshold, conf_ratio, inter_ratio_threshold, min_box_size, ref_image_paths, prompt)
-            # print(f"indices: {indices}")
-            pos_embeddings, neg_embeddings = generate_embedding_data(gt_lines, image_name, labels, scores, boxes, indices, selected_embeds, iou_threshold)
-            all_pos_embeddings.extend(pos_embeddings)
-            all_neg_embeddings.extend(neg_embeddings)
+        # try:
+        labels, scores, boxes, indices, selected_embeds = detect_vision_api(input_image_path, prompt, neg_prompt, threshold, nms_threshold, conf_ratio, inter_ratio_threshold, min_box_size, ref_image_paths, [])
+        # print(f"indices: {indices}")
+        total_embeddings, total_ious = generate_embedding_data(gt_lines, image_name, labels, scores, boxes, indices, selected_embeds, iou_threshold)
+        all_embeddings.extend(total_embeddings)
+        all_ious.extend(total_ious)
             # from IPython import embed; embed()
-        except Exception as e:
-            print(f"{image_name} error: {e}")
-            continue
+        # except Exception as e:
+        #     print(f"{image_name} error: {e}")
+        #     break
+        #     continue
         # print(f"result_filtered.labels: {labels}, result_filtered.scores: {scores}, result_filtered.boxes: {boxes}")
         print("=====================================")
     # save as npz
-    np.savez(os.path.join(output_folder, "pos_image_embeddings.npz"), all_pos_embeddings)
-    np.savez(os.path.join(output_folder, "neg_image_embeddings.npz"), all_neg_embeddings)
+    # np.savez(os.path.join(output_folder, "pos_image_embeddings.npz"), all_pos_embeddings)
+    # np.savez(os.path.join(output_folder, "neg_image_embeddings.npz"), all_neg_embeddings)
+    np.savez(os.path.join(output_folder, "image_embeddings.npz"), embeddings=all_embeddings, ious=all_ious)
 
 

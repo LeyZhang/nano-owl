@@ -233,3 +233,6 @@ Thanks to the authors of [OWL-ViT](https://huggingface.co/docs/transformers/mode
 - [Jetson Introduction to Knowledge Distillation Tutorial](https://github.com/NVIDIA-AI-IOT/jetson-intro-to-distillation) - For an introduction to knowledge distillation as a model optimization technique.
 - [Jetson Generative AI Playground](https://nvidia-ai-iot.github.io/jetson-generative-ai-playground/) - For instructions and tips for using a variety of LLMs and transformers on Jetson.
 - [Jetson Containers](https://github.com/dusty-nv/jetson-containers) - For a variety of easily deployable and modular Jetson Containers
+
+
+python model_scorer.py --dtpath 'transform_result.txt' --dtsplit ' ' --gtpath 'transform_filter_train.txt' --gtsplit ' ' --use_cls 0 --cls_num 1 --iou_th 0.5 --ignore_size 10 --write_csv 1

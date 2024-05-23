@@ -18,6 +18,7 @@ from typing import List, Optional, Union
 
 import PIL.Image
 import torch
+from torch import nn
 
 from .image_preprocessor import ImagePreprocessor
 from .owl_predictor import (
@@ -30,6 +31,34 @@ __all__ = [
     "FewshotPredictor",
 ]
 
+class MLP(nn.Module):
+    def __init__(self, input_dim, hidden_dims, output_dim):
+        super().__init__()
+        self.input_dim = input_dim
+        self.hidden_dims = hidden_dims
+        self.output_dim = output_dim
+        self.fc0 = nn.Linear(input_dim, hidden_dims[0])
+        self.activate0 = nn.GELU()
+        for i in range(len(hidden_dims)-1):
+            setattr(self, f'fc{i+1}', nn.Linear(hidden_dims[i], hidden_dims[i+1]))
+            setattr(self, f'activate{i+1}', nn.GELU())
+        self.fcout = nn.Linear(hidden_dims[-1], output_dim)
+        self.final_activate = nn.Sigmoid()
+
+    def forward(self, x):
+        x = self.fc0(x)
+        x = self.activate0(x)
+        for i in range(len(self.hidden_dims)-1):
+            x = getattr(self, f'fc{i+1}')(x)
+            x = getattr(self, f'activate{i+1}')(x)
+        x = self.fcout(x)
+        x = self.final_activate(x)
+        return x
+
+
+clf = MLP(768, [1024, 2048, 1024, 512, 256, 128], 2)
+clf.load_state_dict(torch.load('model/mlp_total_data_cross_val_2_best.pth'))
+clf.eval()
 
 class FewshotPredictor(torch.nn.Module):
     def __init__(
