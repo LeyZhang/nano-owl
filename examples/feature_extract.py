@@ -213,39 +213,24 @@ def generate_embedding_data(ground_truth_lines, image_name, labels, scores, boxe
     gtboxes = None
     for line in ground_truth_lines:
         if image_name in line:
-            # print(f"line: {line}")
             line = line.strip().split(" ")
             image_name = line[0]
             gtboxes = np.array(line[1:], float).reshape(-1, 5)
-            # print(f"gtboxes: {gtboxes}")
             break
     if len(gtboxes) == 0: # 背景图片
         embeddings = [select_embedding.tolist() for select_embedding in select_embeddings]
         embeddings = np.array(embeddings)
         return embeddings, np.zeros(len(embeddings))
-    pos_embeddings = []
-    neg_embeddings = []
     total_embeddings = []
     total_ious = []
 
     for label, score, box, index, select_embedding in zip(labels, scores, boxes, indices, select_embeddings):
-        # flag = False 
         max_iou = 0
         box = box.tolist()
         for gtbox in gtboxes:
             max_iou = max(max_iou, iou(gtbox[:4], box))
-            # if iou(gtbox[:4], box) > iou_threshold:
-            #     # 暂时只提取对应的特征
-            #     pos_embeddings.append(select_embedding.tolist())
-            #     flag = True
-            #     break
-        # if not flag:
-        #     neg_embeddings.append(select_embedding.tolist())
         total_embeddings.append(select_embedding.tolist())
         total_ious.append(max_iou)
-    # pos_embeddings = np.array(pos_embeddings)
-    # neg_embeddings = np.array(neg_embeddings)
-    # from IPython import embed; embed()
     total_embeddings = np.array(total_embeddings)
     total_ious = np.array(total_ious)
     return total_embeddings, total_ious
