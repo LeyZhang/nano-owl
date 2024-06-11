@@ -8,4 +8,4 @@ engine_path: "../data/owlv2_image_encoder_large_patch14.engine"           # Path
 threshold: "0.01"                                                         # Threshold for the owl model (Try not to change this)
 nms_threshold: 0.3                                                        # Non-maximum suppression threshold
 iou_threshold: 0.7                                                        # Intersection over union threshold
-prompt: "person,bike"                                                          # Prompt for the model, this model is designed specifically for person detection
+prompt: "person"                                                          # Prompt for the model, this model is designed specifically for person detection

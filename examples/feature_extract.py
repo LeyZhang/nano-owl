@@ -219,8 +219,10 @@ def generate_embedding_data(ground_truth_lines, image_name, labels, scores, boxe
             gtboxes = np.array(line[1:], float).reshape(-1, 5)
             # print(f"gtboxes: {gtboxes}")
             break
-    if len(gtboxes) == 0: # 背景图片，所有都是负样本
-        return [], [select_embedding.tolist() for select_embedding in select_embeddings]
+    if len(gtboxes) == 0: # 背景图片
+        embeddings = [select_embedding.tolist() for select_embedding in select_embeddings]
+        embeddings = np.array(embeddings)
+        return embeddings, np.zeros(len(embeddings))
     pos_embeddings = []
     neg_embeddings = []
     total_embeddings = []
@@ -331,6 +333,6 @@ if __name__ == "__main__":
     # save as npz
     # np.savez(os.path.join(output_folder, "pos_image_embeddings.npz"), all_pos_embeddings)
     # np.savez(os.path.join(output_folder, "neg_image_embeddings.npz"), all_neg_embeddings)
-    np.savez(os.path.join(output_folder, "image_embeddings.npz"), embeddings=all_embeddings, ious=all_ious)
-
-
+    # np.savez(os.path.join(output_folder, "image_embeddings.npz"), embeddings=all_embeddings, ious=all_ious)
+    np.savez(os.path.join(output_folder, "image_embeddings.npz"), embeddings=all_embeddings)
+    np.savez(os.path.join(output_folder, "all_ious.npz"), ious=all_ious)
